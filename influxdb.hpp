@@ -13,6 +13,7 @@
 #include <sstream>
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 
 #ifdef _WIN32
     #define NOMINMAX
@@ -50,7 +51,7 @@ namespace influxdb_cpp {
             hostent * record = gethostbyname(host.c_str());
             if(record == NULL)
             {
-                printf("Cannot resolve IP address from hostname: %s is unavailable\n", host.c_str());
+                printf("Cannot resolve IP address from hostname: %s is unavailable. Try to ping the host.\n", host.c_str());
                 exit(-1);
             }
             in_addr * address = (in_addr * )record->h_addr;
