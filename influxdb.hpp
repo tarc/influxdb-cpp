@@ -30,6 +30,7 @@
     #include <sys/socket.h>
     #include <sys/uio.h>
     #include <netinet/in.h>
+    #include <netdb.h>
     #include <arpa/inet.h>
     #define closesocket close
 #endif
@@ -43,7 +44,22 @@ namespace influxdb_cpp {
         std::string pwd_;
         std::string precision_;
         server_info(const std::string& host, int port, const std::string& db = "", const std::string& usr = "", const std::string& pwd = "", const std::string& precision="ms")
-            : host_(host), port_(port), db_(db), usr_(usr), pwd_(pwd), precision_(precision) {}
+            : host_(host), port_(port), db_(db), usr_(usr), pwd_(pwd), precision_(precision)
+        {
+            //convert hostname to ip-address
+            hostent * record = gethostbyname(host.c_str());
+            if(record == NULL)
+            {
+                printf("Cannot resolve IP address from hostname: %s is unavailable\n", host.c_str());
+                exit(-1);
+            }
+            in_addr * address = (in_addr * )record->h_addr;
+            std::string ip_address = inet_ntoa(* address);
+
+            printf("Resolved IP address from hostname: %s.\n", ip_address.c_str());
+
+            host_ = ip_address;
+        }
     };
     namespace detail {
         struct meas_caller;
@@ -206,6 +222,7 @@ namespace influxdb_cpp {
 
             addr.sin_family = AF_INET;
             addr.sin_port = htons(si.port_);
+
             if((addr.sin_addr.s_addr = inet_addr(si.host_.c_str())) == INADDR_NONE) return -1;
 
             if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) return -2;
